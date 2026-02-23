@@ -163,11 +163,11 @@ const isApplyRoute = createRouteMatcher(['/jobs/apply(.*)'])
 - [x] Clerk auth pages (sign-in, sign-up)
 - [x] Navbar component
 
-### Phase 2 — Job Seeker Flow
-- [ ] `/jobs` — browse page with search, filters (type, location), and pagination
-- [ ] `/jobs/[id]` — job detail page
-- [ ] Application submission form (requires sign-in)
-- [ ] Applicant dashboard — `/dashboard/applications` — view my applications + statuses
+### Phase 2 — Job Seeker Flow ✅
+- [x] `/jobs` — browse page with search, filters (type, location)
+- [x] `/jobs/[id]` — job detail page
+- [x] Application submission form (requires sign-in, duplicate-prevention, closed-job guard)
+- [x] Applicant dashboard — `/dashboard/applications` — view my applications + statuses
 
 ### Phase 3 — Employer Org Setup
 - [ ] `/employer` — value prop landing page
