@@ -8,7 +8,7 @@
  * @module
  */
 
-import type * as myFunctions from "../myFunctions.js";
+import type * as jobs from "../jobs.js";
 
 import type {
   ApiFromModules,
@@ -17,7 +17,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  myFunctions: typeof myFunctions;
+  jobs: typeof jobs;
 }>;
 
 /**
