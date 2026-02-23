@@ -177,11 +177,16 @@ const isApplyRoute = createRouteMatcher(['/jobs/apply(.*)'])
 - [x] `/employer/dashboard` — overview with stats, quick actions, getting-started checklist
 - [x] Middleware updated: redirects to onboarding if authed but no active org
 
-### Phase 4 — Employer Job Management (Plan-Gated)
-- [ ] Create / edit / close job postings
-- [ ] Enforce Starter plan 3-post limit in Convex mutation
-- [ ] Gate featured listing toggle behind Pro plan with `<Protect plan="pro">`
-- [ ] View and manage applicants per job (change status: pending → interview → rejected)
+### Phase 4 — Employer Job Management (Plan-Gated) ✅
+- [x] Create / edit / close job postings (`createJob`, `updateJob`, `closeJob` mutations)
+- [x] Starter plan 3 active job limit enforced in Convex mutation + client-side usage bar
+- [x] Featured listing toggle gated behind `<Protect plan="pro">` in shared `JobForm`
+- [x] `getOrgJobsWithCounts` — job list with per-job application counts
+- [x] `/employer/dashboard/jobs` — job table with status, apps, edit/close/publish actions
+- [x] `/employer/dashboard/jobs/new` — create job (plan-aware, org-scoped)
+- [x] `/employer/dashboard/jobs/[id]/edit` — edit any org job
+- [x] `/employer/dashboard/applications` — view + manage all applicants, filter by job
+- [x] Application status workflow: pending → reviewed → interview / rejected
 
 ### Phase 5 — Team Management
 - [ ] Member invitations via `<OrganizationProfile />`
