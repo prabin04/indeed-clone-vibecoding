@@ -169,11 +169,13 @@ const isApplyRoute = createRouteMatcher(['/jobs/apply(.*)'])
 - [x] Application submission form (requires sign-in, duplicate-prevention, closed-job guard)
 - [x] Applicant dashboard — `/dashboard/applications` — view my applications + statuses
 
-### Phase 3 — Employer Org Setup
-- [ ] `/employer` — value prop landing page
-- [ ] `/employer/onboarding` — `<CreateOrganization />` flow
-- [ ] `/employer/pricing` — `<PricingTable for="organization" />`
-- [ ] Employer dashboard shell with sidebar + `<OrganizationSwitcher />`
+### Phase 3 — Employer Org Setup ✅
+- [x] `/employer` — value prop landing page (features, pricing preview, CTAs)
+- [x] `/employer/onboarding` — `<CreateOrganization />` flow with 3-step indicator
+- [x] `/employer/pricing` — `<PricingTable for="organization" />` with org guard
+- [x] Employer dashboard shell (`layout.tsx`) with sidebar + `<OrganizationSwitcher />`
+- [x] `/employer/dashboard` — overview with stats, quick actions, getting-started checklist
+- [x] Middleware updated: redirects to onboarding if authed but no active org
 
 ### Phase 4 — Employer Job Management (Plan-Gated)
 - [ ] Create / edit / close job postings
