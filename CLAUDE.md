@@ -188,10 +188,15 @@ const isApplyRoute = createRouteMatcher(['/jobs/apply(.*)'])
 - [x] `/employer/dashboard/applications` — view + manage all applicants, filter by job
 - [x] Application status workflow: pending → reviewed → interview / rejected
 
-### Phase 5 — Team Management
-- [ ] Member invitations via `<OrganizationProfile />`
-- [ ] Role-based UI — only `org:admin` sees billing tab
-- [ ] Role-based mutation guards in Convex
+### Phase 5 — Team Management ✅
+- [x] Member invitations via `<OrganizationProfile />` — `/employer/dashboard/members/[[...rest]]`
+- [x] Billing page — `/employer/dashboard/billing` — admin-only (`org:admin` redirect guard), `<PricingTable for="organization" />`
+- [x] Role-based UI — only `org:admin` sees billing tab in sidebar
+- [x] Role-based mutation guards in Convex:
+  - `createJob` — requires `org:admin` or `org:member`
+  - `updateJob` — requires `org:admin` or `org:member`
+  - `closeJob` — requires `org:admin` only
+  - `updateApplicationStatus` — requires `org:admin` or `org:member`
 
 ---
 

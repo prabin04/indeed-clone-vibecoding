@@ -113,6 +113,14 @@ export const getOrgJobsWithCounts = query({
 });
 
 // ─── Employer mutations ────────────────────────────────────────────────────
+//
+// Role model:
+//   org:admin  — can create, edit, close jobs; admin-only in the UI
+//   org:member — can create and edit jobs; cannot close
+//
+// Requires these claims in your Clerk "convex" JWT template:
+//   "org_id":   "{{org.id}}"
+//   "org_role": "{{org.role}}"
 
 export const createJob = mutation({
   args: {
@@ -132,7 +140,12 @@ export const createJob = mutation({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const orgId = (identity as any).org_id as string | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orgRole = (identity as any).org_role as string | undefined;
     if (!orgId) throw new Error("No active organization");
+    if (orgRole !== "org:admin" && orgRole !== "org:member") {
+      throw new Error("Must be an org member to post jobs");
+    }
 
     // Starter plan limit: max 3 active jobs.
     // Pro users bypass this via client-side has({ plan: 'pro' }) check before submitting.
@@ -190,7 +203,12 @@ export const updateJob = mutation({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const orgId = (identity as any).org_id as string | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orgRole = (identity as any).org_role as string | undefined;
     if (!orgId) throw new Error("No active organization");
+    if (orgRole !== "org:admin" && orgRole !== "org:member") {
+      throw new Error("Must be an org member to edit jobs");
+    }
 
     const job = await ctx.db.get(args.id);
     if (!job || job.orgId !== orgId) throw new Error("Not authorized");
@@ -208,7 +226,12 @@ export const closeJob = mutation({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const orgId = (identity as any).org_id as string | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orgRole = (identity as any).org_role as string | undefined;
     if (!orgId) throw new Error("No active organization");
+    if (orgRole !== "org:admin") {
+      throw new Error("Only org admins can close job listings");
+    }
 
     const job = await ctx.db.get(args.id);
     if (!job || job.orgId !== orgId) throw new Error("Not authorized");

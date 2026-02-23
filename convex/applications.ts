@@ -135,7 +135,12 @@ export const updateApplicationStatus = mutation({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const orgId = (identity as any).org_id as string | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orgRole = (identity as any).org_role as string | undefined;
     if (!orgId) throw new Error("No active organization");
+    if (orgRole !== "org:admin" && orgRole !== "org:member") {
+      throw new Error("Must be an org member to update application status");
+    }
 
     const application = await ctx.db.get(args.applicationId);
     if (!application) throw new Error("Application not found");
