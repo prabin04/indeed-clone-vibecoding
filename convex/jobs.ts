@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { paginationOptsValidator } from "convex/server";
 
 // Shared job type validator
 const jobTypeValidator = v.union(
@@ -79,6 +80,28 @@ export const getById = query({
   args: { id: v.id("jobs") },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
+  },
+});
+
+export const listJobsPaginated = query({
+  args: {
+    type: v.optional(jobTypeValidator),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    if (args.type) {
+      return await ctx.db
+        .query("jobs")
+        .withIndex("by_status", (q) => q.eq("status", "active"))
+        .filter((q) => q.eq(q.field("type"), args.type!))
+        .order("desc")
+        .paginate(args.paginationOpts);
+    }
+    return await ctx.db
+      .query("jobs")
+      .withIndex("by_status", (q) => q.eq("status", "active"))
+      .order("desc")
+      .paginate(args.paginationOpts);
   },
 });
 

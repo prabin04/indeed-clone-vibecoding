@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery, usePaginatedQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { api } from "@/convex/_generated/api";
@@ -26,6 +26,8 @@ const JOB_TYPE_COLORS: Record<string, string> = {
 
 type JobType = "full-time" | "part-time" | "contract" | "internship" | "remote" | undefined;
 
+const PAGE_SIZE = 12;
+
 function JobsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -36,11 +38,28 @@ function JobsContent() {
     (searchParams.get("type") as JobType) ?? undefined
   );
 
-  const jobs = useQuery(api.jobs.searchJobs, {
-    query: searchParams.get("q") ?? undefined,
-    location: searchParams.get("l") ?? undefined,
-    type: (searchParams.get("type") as JobType) ?? undefined,
-  });
+  const textQuery = searchParams.get("q") ?? undefined;
+  const locationParam = searchParams.get("l") ?? undefined;
+  const typeParam = (searchParams.get("type") as JobType) ?? undefined;
+
+  // Text search path (no pagination)
+  const searchResults = useQuery(
+    api.jobs.searchJobs,
+    textQuery
+      ? { query: textQuery, location: locationParam, type: typeParam }
+      : "skip"
+  );
+
+  // Browse / filter path (paginated)
+  const {
+    results: browseResults,
+    status: browseStatus,
+    loadMore,
+  } = usePaginatedQuery(
+    api.jobs.listJobsPaginated,
+    textQuery ? "skip" : { type: typeParam },
+    { initialNumItems: PAGE_SIZE }
+  );
 
   // Sync filter state when URL params change
   useEffect(() => {
@@ -65,8 +84,14 @@ function JobsContent() {
     router.push("/jobs");
   }
 
-  const hasActiveFilters =
-    searchParams.get("q") || searchParams.get("l") || searchParams.get("type");
+  const hasActiveFilters = textQuery || locationParam || typeParam;
+
+  // Resolve active jobs + loading state based on which path is active
+  const jobs = textQuery ? (searchResults ?? []) : browseResults;
+  const isLoading = textQuery
+    ? searchResults === undefined
+    : browseStatus === "LoadingFirstPage";
+  const canLoadMore = !textQuery && browseStatus === "CanLoadMore";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -157,22 +182,23 @@ function JobsContent() {
           {/* Results header */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-600">
-              {jobs === undefined ? (
+              {isLoading ? (
                 "Loading..."
               ) : (
                 <>
                   <span className="font-semibold text-gray-900">
                     {jobs.length}
                   </span>{" "}
-                  {jobs.length === 1 ? "job" : "jobs"} found
-                  {hasActiveFilters && " for your search"}
+                  {jobs.length === 1 ? "job" : "jobs"}{" "}
+                  {textQuery ? "found for your search" : "available"}
+                  {canLoadMore && " · scroll for more"}
                 </>
               )}
             </p>
           </div>
 
           {/* Loading skeleton */}
-          {jobs === undefined && (
+          {isLoading && (
             <div className="flex flex-col gap-3">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div
@@ -188,7 +214,7 @@ function JobsContent() {
           )}
 
           {/* Empty state */}
-          {jobs !== undefined && jobs.length === 0 && (
+          {!isLoading && jobs.length === 0 && (
             <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
               <p className="text-gray-500 text-lg">No jobs found.</p>
               <p className="text-gray-400 text-sm mt-1">
@@ -204,60 +230,86 @@ function JobsContent() {
           )}
 
           {/* Job cards */}
-          {jobs !== undefined && jobs.length > 0 && (
-            <div className="flex flex-col gap-3">
-              {jobs.map((job) => (
-                <Link
-                  key={job._id}
-                  href={`/jobs/${job._id}`}
-                  className="bg-white border border-gray-200 rounded-lg p-5 hover:border-blue-400 hover:shadow-sm transition-all group"
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Company logo placeholder */}
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-700 font-bold text-lg shrink-0">
-                      {job.company[0]}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 flex-wrap">
-                        <h2 className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
-                          {job.title}
-                        </h2>
-                        <span
-                          className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${JOB_TYPE_COLORS[job.type] ?? "bg-gray-100 text-gray-600"}`}
-                        >
-                          {job.type}
-                        </span>
+          {!isLoading && jobs.length > 0 && (
+            <>
+              <div className="flex flex-col gap-3">
+                {jobs.map((job) => (
+                  <Link
+                    key={job._id}
+                    href={`/jobs/${job._id}`}
+                    className="bg-white border border-gray-200 rounded-lg p-5 hover:border-blue-400 hover:shadow-sm transition-all group"
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Company logo placeholder */}
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-700 font-bold text-lg shrink-0">
+                        {job.company[0]}
                       </div>
-                      <p className="text-sm text-gray-700 mt-0.5">{job.company}</p>
-                      <p className="text-sm text-gray-500 mt-0.5">{job.location}</p>
 
-                      <div className="flex items-center gap-4 mt-3 flex-wrap">
-                        {job.salary && (
-                          <span className="text-sm font-medium text-gray-700">
-                            {job.salary.currency}
-                            {job.salary.min.toLocaleString()} –{" "}
-                            {job.salary.currency}
-                            {job.salary.max.toLocaleString()}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 flex-wrap">
+                          <h2 className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
+                            {job.title}
+                          </h2>
+                          <span
+                            className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${JOB_TYPE_COLORS[job.type] ?? "bg-gray-100 text-gray-600"}`}
+                          >
+                            {job.type}
                           </span>
-                        )}
-                        {job.featured && (
-                          <span className="text-xs bg-amber-100 text-amber-700 font-medium px-2 py-0.5 rounded-full">
-                            Featured
+                        </div>
+                        <p className="text-sm text-gray-700 mt-0.5">{job.company}</p>
+                        <p className="text-sm text-gray-500 mt-0.5">{job.location}</p>
+
+                        <div className="flex items-center gap-4 mt-3 flex-wrap">
+                          {job.salary && (
+                            <span className="text-sm font-medium text-gray-700">
+                              {job.salary.currency}
+                              {job.salary.min.toLocaleString()} –{" "}
+                              {job.salary.currency}
+                              {job.salary.max.toLocaleString()}
+                            </span>
+                          )}
+                          {job.featured && (
+                            <span className="text-xs bg-amber-100 text-amber-700 font-medium px-2 py-0.5 rounded-full">
+                              Featured
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-400 ml-auto">
+                            {new Date(job.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
                           </span>
-                        )}
-                        <span className="text-xs text-gray-400 ml-auto">
-                          {new Date(job.createdAt).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Load more */}
+              {canLoadMore && (
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={() => loadMore(PAGE_SIZE)}
+                    className="border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    Load more jobs
+                  </button>
+                </div>
+              )}
+
+              {browseStatus === "LoadingMore" && (
+                <div className="mt-6 text-center text-sm text-gray-400">
+                  Loading...
+                </div>
+              )}
+
+              {!textQuery && browseStatus === "Exhausted" && jobs.length > PAGE_SIZE && (
+                <p className="mt-6 text-center text-xs text-gray-400">
+                  All {jobs.length} jobs loaded.
+                </p>
+              )}
+            </>
           )}
         </main>
       </div>

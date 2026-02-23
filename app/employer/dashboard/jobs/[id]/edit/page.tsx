@@ -8,6 +8,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import JobForm, { type JobFormValues } from "@/components/employer/job-form";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function EditJobPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,7 +42,10 @@ export default function EditJobPage() {
         featured: values.featured,
         status: values.status as "active" | "closed" | "draft",
       });
+      toast.success("Job updated successfully.");
       router.push("/employer/dashboard/jobs");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update job.");
     } finally {
       setIsSubmitting(false);
     }

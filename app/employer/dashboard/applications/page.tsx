@@ -6,6 +6,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 const STATUS_STYLES = {
   pending: { bg: "bg-yellow-100", text: "text-yellow-700", label: "Pending" },
@@ -60,6 +61,13 @@ function ApplicationsContent() {
       : applications
     : undefined;
 
+  const STATUS_LABELS: Record<string, string> = {
+    reviewed: "Marked as reviewed.",
+    interview: "Moved to interview.",
+    rejected: "Application rejected.",
+    pending: "Moved back to pending.",
+  };
+
   async function handleStatusChange(
     applicationId: Id<"applications">,
     status: "reviewed" | "interview" | "rejected" | "pending"
@@ -67,6 +75,9 @@ function ApplicationsContent() {
     setUpdatingId(applicationId);
     try {
       await updateStatus({ applicationId, status });
+      toast.success(STATUS_LABELS[status] ?? "Status updated.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update status.");
     } finally {
       setUpdatingId(null);
     }

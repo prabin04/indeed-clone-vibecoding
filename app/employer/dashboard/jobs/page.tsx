@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 
 const STATUS_STYLES = {
   active: "bg-green-100 text-green-700",
@@ -30,6 +31,9 @@ export default function EmployerJobsPage() {
     setClosingId(id);
     try {
       await closeJobMutation({ id });
+      toast.success("Job closed.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to close job.");
     } finally {
       setClosingId(null);
     }

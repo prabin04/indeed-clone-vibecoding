@@ -7,6 +7,7 @@ import { api } from "@/convex/_generated/api";
 import JobForm, { type JobFormValues } from "@/components/employer/job-form";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function NewJobPage() {
   const router = useRouter();
@@ -39,7 +40,19 @@ export default function NewJobPage() {
         featured: values.featured,
         status: values.status,
       });
+      toast.success(
+        values.status === "active" ? "Job posted successfully!" : "Job saved as draft."
+      );
       router.push("/employer/dashboard/jobs");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      if (msg.startsWith("STARTER_LIMIT:")) {
+        toast.error("Job limit reached — upgrade to Pro for unlimited postings.", {
+          action: { label: "Upgrade", onClick: () => router.push("/employer/pricing") },
+        });
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setIsSubmitting(false);
     }
